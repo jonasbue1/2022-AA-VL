@@ -1,6 +1,6 @@
 ﻿* Encoding: UTF-8.
 
-***VL4: Korrelation & bivariate Regression ***
+***VL6: Korrelation & bivariate Regression ***
 
 ***Studie: Johannes, N., Dienlin, T., Bakhshi, H. et al. No effect of different types of media on well-being 
     Sci Rep 12, 61 (2022). https://doi.org/10.1038/s41598-021-03218-7***
