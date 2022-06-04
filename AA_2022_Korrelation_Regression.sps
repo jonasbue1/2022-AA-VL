@@ -6,46 +6,77 @@
     Sci Rep 12, 61 (2022). https://doi.org/10.1038/s41598-021-03218-7***
 *** Daten: https://osf.io/f3qjv/ => wave1.csv ***
 
-*** Fragestellung:
-    1. In welchem Zusammenhang stehen Alter und Geschlecht mit der Nutzungszeit verschiedener Medien ***
-    2. In welchem Zusammenhang stehen die Nutzungszeiten verschiedener Medien untereinander ***
-    3. Welchen Effekt hat Alter auf die 
+*** Vorbereitung der Variablen ***
     
-*** Deskriptive Analyse *** 
+*Zentrieren und Standardisieren von Alter und games_time ***
+    
+*Zentrieren *** 
 
-FREQUENCIES VARIABLES=gender.
+aggregate outfile * mode addvariables
+/mean_age = mean(age).
 
-DESCRIPTIVES VARIABLES= age music_time films_time tv_time games_time books_time 
-    magazines_time audiobooks_time total_time
-  /STATISTICS=MEAN STDDEV MIN MAX.
+compute age_centered = age - mean_age.
+
+*** Standardisieren ***
+    
+DESCRIPTIVES VAR=age games_time
+/SAVE.
+
+RENAME VARIABLES (Zage Zgames_time = age_z games_time_z).
 
 *** Korrelationen*** 
 
 CORRELATIONS
-  /VARIABLES=gender age music_time films_time tv_time games_time books_time magazines_time 
-    audiobooks_time total_time
+  /VARIABLES= tv_time games_time music_time age
   /PRINT=TWOTAIL NOSIG LOWER.
 
-*** Ergebnisse:  
-    -     Geschlecht (dummy 1 = männlich, 2 = weiblich) steht in einem negativen Zusammenhang mit Musikzeit (r= -.08, p<.001), 
-          Videospielzeit (r= -.125, .p<.001), einem positiven Zusammenhang mit Buchzeit (r = .066, p<.001) und einem negativen Zusammenhang mit der Gesamtzeit (r = -.60, p<.01)
-    -     Das Alter steht in einem negativen Zusammenhang mit Musikzeit (r= -.22, p<.001), Filmzeit (r = -.17, p<.001), Fernsehzeit (r = -.10, p<.001),
-          Videospielzeit (r= -.23, .p<.001), einem positiven Zusammenhang mit Buchzeit (r = .051, p<.05) und Gesamtzeit (r = -.25, p<.001).***
-    -     Musikzeit steht in einem positiven Zusammenhang mit Filmzeit (r =.16,p<.001)
-    -     Filmzeit steht in einem positiven Zusammenhang mit Fernsehzeit (r = .08, p<.001) 
-    usw.***
-    
-*** Lineare Regression *** 
 
-REGRESSION
-  /DEPENDENT films_time
-  /METHOD=ENTER age.
+*** Scatterplot ***
 
-*** Das Alter hat einen positiven Einfluss auf Filmzeit (b = .17, p<.001). Mit jedem Jahr älter, steigt die Filmzeit um .17 Einheiten ***
+GGRAPH
+  /GRAPHDATASET NAME="graphdataset" VARIABLES=age games_time MISSING=LISTWISE REPORTMISSING=NO
+  /GRAPHSPEC SOURCE=INLINE
+  /FITLINE TOTAL=NO SUBGROUP=NO.
+BEGIN GPL
+  SOURCE: s=userSource(id("graphdataset"))
+  DATA: age=col(source(s), name("age"))
+  DATA: games_time=col(source(s), name("games_time"))
+  GUIDE: axis(dim(1), label("age"))
+  GUIDE: axis(dim(2), label("games_time"))
+  GUIDE: text.title(label("Streudiagramm von games_time Schritt: age"))
+  ELEMENT: point(position(age*games_time))
+END GPL.
+  
+*** Bivariate Regression *** 
 
 REGRESSION
   /DEPENDENT games_time
-  /METHOD=ENTER gender.
+  /METHOD=ENTER age.
 
-*** Geschlecht hat einen negativen Einfluss auf Videospielzeit (b = .-600, p<.001). Frauen verbringen im Durchschnitt 0.6 Einheiten weniger
-    Zeit mit Videospielen als Männer ***
+
+*** Zentrierte X Variable ***
+
+REGRESSION
+  /DEPENDENT games_time
+  /METHOD=ENTER age_z.
+
+*** Visualisierung der vorhergesagten Werte ***
+    
+* Diagrammerstellung.
+GGRAPH
+  /GRAPHDATASET NAME="graphdataset" VARIABLES=age PRE_1 MISSING=LISTWISE REPORTMISSING=NO
+  /GRAPHSPEC SOURCE=INLINE
+  /FITLINE TOTAL=NO SUBGROUP=NO.
+BEGIN GPL
+  SOURCE: s=userSource(id("graphdataset"))
+  DATA: age=col(source(s), name("age"))
+  DATA: PRE_1=col(source(s), name("PRE_1"))
+  GUIDE: axis(dim(1), label("age"))
+  GUIDE: axis(dim(2), label("Unstandardized Predicted Value"))
+  GUIDE: text.title(label("Streudiagramm von Unstandardized Predicted Value Schritt: age"))
+  ELEMENT: point(position(age*PRE_1))
+END GPL.
+
+
+
+
